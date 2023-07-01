@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<!--
+LADRILHO - Aplicação gráfica interativa de manipulação simples de um ladrilho, destinado à avaliação de competências, no ano letivo de 2022-2023, do aluno n.º 24728, João Víctor Maia.
+-->
+<html lang="pt">
+	<head>
+		<meta charset="utf-8" />
+		<title>LADRILHO</title>
+		<style>
+			/*  Define o contêiner principal com largura fixa, borda e cor de fundo. */
+			#section1{
+				width: 1000px; 
+				border: 6px inset; 
+				margin:0px auto; 
+				overflow: auto;
+				background-color :#c0c0c0;
+			}
+
+			/* Define o contêiner à direita do ladrilho grande, com largura fixa e posicionamento flutuante à right. */
+			#section2{
+				width: 334px;
+				margin: 20px 20px 0px 0px; 
+				float: right;
+			}
+			
+			#tile{
+				display:block; 
+				margin: 20px; 
+				float: left;
+			}
+
+			/* #text, #botao e #mod: Definem a aparência dos textos e botão na seção à direita do ladrilho grande. */
+			#text{
+				font: bold 19px arial; 
+				color:#802000;
+			}
+			
+			#botao{
+				font: 19px arial; 
+				padding: 1px 8px;
+			}
+
+			#mod{
+				width: 40px;
+				font: bold 22px arial; 
+				background-color: #ffffff; 
+				display: inline-block; 
+				text-align: center;
+			}
+		</style>
+		<script>
+			//ladrilho1 e ladrilho2: São elementos HTML do tipo canvas, onde serão desenhados os ladrilhos.
+			let ladrilho1, ladrilho2;
+			//draw1 e draw2: São contextos de renderização 2D dos elementos canvas ladrilho1 e ladrilho2.
+			let draw1, draw2;
+
+			//inicialização
+			function inic(){
+				//Contexto gráfico do ladrilho maior 
+				ladrilho1 = document.getElementById("tile");
+				draw1 = ladrilho1.getContext("2d");
+
+				//Contexto gráfico do ladrilho menor
+				ladrilho2 = document.getElementById("smalltile");
+				draw2 = ladrilho2.getContext("2d");
+
+				//inicializar os ladrilhos
+				bigTile();
+				smallTile();
+			}
+
+			//******** input/output ********
+
+			//output de um conteúdo num contentor HTML, dados o ID do contentor e o conteúdo (boleano, número ou string)
+			function out(valor){
+				document.getElementById("mod").innerHTML = valor;
+				bigTile();
+				smallTile();
+			}
+
+			//Função que desenha o ladrilho grande (padrão) no canvas, atualizando o valor da modularidade e calculando o tamanho de cada parte do ladrilho.
+			function bigTile() {
+				const modul = parseInt(document.getElementById("modularidade").value);
+				document.getElementById("cor").innerHTML = modul;
+				draw1.clearRect(0, 0, draw1.width, draw1.width);
+
+				const tamanho = ladrilho1.width / modul;
+
+				const lineWidth = modul === 1 ? 6.3 : Math.max(0.3, 6.3 - (modul - 1) * 1.9);
+ 				draw1.lineWidth = lineWidth;
+
+				drawLadrilhos(modul, tamanho, draw1);
+			}
+
+			//Função que desenha um ladrilho pequeno no canvas, utilizando a cor selecionada pelo utilizador.
+			function smallTile(){
+				const corSelecionada = document.getElementById("cor").value;
+				document.getElementById("cor").innerHTML = 1;
+				draw2.clearRect(0, 0, draw2.width, draw2.width);
+
+				const tamanho = ladrilho2.width / 1;
+
+				drawLadrilhos(1, tamanho, draw2, corSelecionada);
+			}
+			
+			//Função que desenha ladrilhos em um canvas, com base na modularidade, tamanho, contexto de renderização, assim como cor selecionada.
+			function drawLadrilhos(modul, tamanho, canvas, corSelecionada) {
+				for (let cont = 0; cont < modul; cont++) {
+						for (let cont2 = 0; cont2 < modul; cont2++) {
+						const width = cont * tamanho;
+						const height = cont2 * tamanho;
+						ladrilho(canvas, width, height, tamanho, corSelecionada);
+					}
+				}
+			}
+
+			//Função que desenha um ladrilho individual no contexto de renderização, utilizando as coordenadas, tamanho e cor fornecidos.
+			function ladrilho(desenho, width, height, dim, rgb) {
+				 // Obtém o valor da cor selecionada no elemento HTML com o id "cor"
+				let cor = document.getElementById("cor").value;
+
+				// Obtém uma lista de tons de cor com base no valor obtido anteriormente
+				let color = listaTons(3.01, cor);
+
+				// Array contendo as funções para desenhar os triângulos
+				const triangleFunctions = [
+					
+					// Triângulo Inferior
+					function () {
+						desenho.moveTo(width + dim, height + dim);
+						desenho.lineTo(width + dim / 2, height + dim / 2);
+						desenho.lineTo(width, height + dim);
+					},
+
+					// Triângulo Direito
+					function () {
+						desenho.moveTo(width + dim, height + dim);
+						desenho.lineTo(width + dim / 2, height + dim / 2);
+						desenho.lineTo(width + dim, height);
+					},
+					
+					// Triângulo Esquerdo
+					function () {
+						desenho.moveTo(width, height);
+						desenho.lineTo(width, height + dim);
+						desenho.lineTo(width + dim / 2, height + dim / 2);
+					},
+
+					// Triângulo Superior
+					function () {
+						desenho.moveTo(width, height);
+						desenho.lineTo(width + dim, height);
+						desenho.lineTo(width + dim / 2, height + dim / 2);
+					},
+				];
+
+				// Percorre o array de funções de triângulo
+				triangleFunctions.forEach((triangleFunction, cont) => {
+					// Define a cor de preenchimento com base no contador 'cont'
+					desenho.fillStyle = color[cont];
+
+					// Inicia um novo caminho de desenho
+					desenho.beginPath();
+
+					// Chama a função do triângulo para desenhar o triângulo
+					triangleFunction();
+
+					// Finaliza o caminho de desenho
+					desenho.closePath();
+
+					// Desenha as linhas do triângulo
+					desenho.stroke();
+
+					// Preenche o triângulo com a cor definida
+					desenho.fill();
+				});
+
+				// Desenhar linhas à volta do quadrado
+				desenho.strokeRect(width, height, dim, dim);
+			}
+			
+			//********* processos *********
+
+			//lista das componentes RGB decimais de uma cor representada em código hexadecimal
+			function rgbHex(ch){
+				var i, cd = [];
+				for(i=0; i<3; i++) cd.push(parseInt(ch[2*i+1] + ch[2*i+2], 16));
+				return cd;
+			}
+			
+			//representação em código hexadecimal de uma cor representada segundo uma lista das componentes RGB decimais
+			function hexRGB(cd){
+				var i, comp, ch = "#";
+				for(i=0; i<3; i++){
+					comp = Math.round(cd[i]).toString(16);
+					if(cd[i] > 15) ch += comp; else ch += "0" + comp;
+				}
+				return ch;
+			}
+			
+			//lista das componentes HSL de uma cor representada em lista de componentes RGB decimais
+			function hslRGB(cd){
+				var R, G, B, H, S, L, min, max;
+				//converte os valores RGB para o intervalo 0-1 e determina o mínimo e o máximo
+				R = cd[0]/255; G = cd[1]/255; B = cd[2]/255;
+				min = Math.min(R,G,B); max = Math.max(R,G,B);
+				//Luminosidade
+				L = (min + max) / 2;
+				//se for um cinza, a saturação e a matiz são zero
+				if(max == min) return [0,0,L]; 
+				//SATURAÇÃO
+				if(L <= 0.5) S = (max-min)/(max+min); else S = (max-min)/(2-max-min);
+				//MATIZ (escala 0-6)
+				if(max == R) H = (G-B)/(max-min);
+				if(max == G) H = 2 + (B-R)/(max-min);
+				if(max == B) H = 4 + (R-G)/(max-min);
+				//Resultado
+				return [60*H, S, L];
+			}
+
+			//lista das componentes RGB decimais de uma cor representada em lista de componentes HSL 
+			function rgbHSL(cHSL){
+				//extrai as componentes
+				var h=cHSL[0], s=cHSL[1], l=cHSL[2];
+				//estabelece os parâmetros da fórmula
+				const k = n => (n + h / 30) % 12;
+				const a = s * Math.min(l, 1 - l);
+				//estabelece a fórmula
+				const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+				//resultado
+				return [Math.round(255 * f(0)), Math.round(255 * f(8)), Math.round(255 * f(4))];
+			};
+			
+			//gera uma lista de tons cromáticos, em código hexadecimal, por ordem crescente de luminosidade, dados o número de tons e a cor base, em código hexadecimal 
+			function listaTons(nTons, corBase){
+				var corHSL = hslRGB(rgbHex(corBase)); 
+				var h = corHSL[0], s = corHSL[1], l = corHSL[2];
+				var i, dl = 1/(nTons+2), lista = [];
+				for(i=1; i<nTons+1; i++){
+					lista.push(hexRGB(rgbHSL([h, s, i*dl])));
+				}
+				return lista;
+			}
+		</script>
+	</head>
+	<body onload="inic()" style="background-color: #c0c0c0;">
+		<div id="section1">
+			<!-- tile: Define o estilo do elemento canvas para o ladrilho grande -->
+			<canvas id="tile" width="606px" height="606px"></canvas>
+			<div id="section2"> 
+				<!-- smallTile: Define o estilo do elemento canvas para o ladrilho pequeno -->
+				<canvas id="smalltile" width="156px" height="156px"></canvas>
+				<hr>
+				<span id="text">Base Colour: </span>
+				<input id="cor" type="color" value="#ff8000" oninput="smallTile()">
+				<button id="botao" onclick="bigTile()">Apply Colours</button>
+				<hr>
+				<span id="text">Modularity: </span>
+				<span id="mod">12</span>
+				<br>
+				<input type="range" id="modularidade" style="width: 100%;" min="1" max="40" value="12" step="1" oninput="out(value)">
+			</div>
+		</div>
+	</body>
+</html>
